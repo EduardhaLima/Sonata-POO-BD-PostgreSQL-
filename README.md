@@ -152,25 +152,108 @@ A API conecta em `jdbc:postgresql://localhost:5432/sonata` (default do
 
 ---
 
-## Testando os endpoints
+## Testando os endpoints com Postman
 
-Use **Postman**, **Insomnia** ou `curl`:
+Todos os exemplos abaixo assumem que a API está rodando em
+`http://localhost:8080`. Recomendamos criar uma **Environment** no Postman
+com a variável `{{baseUrl}} = http://localhost:8080` e usá-la nas requisições.
 
-```bash
-# Criar usuário
-curl -X POST http://localhost:8080/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Ana","email":"ana@sonata.com","password":"secret123","preferredAudioQuality":"LOSSLESS"}'
+### Configuração inicial no Postman
 
-# Listar compositores
-curl http://localhost:8080/api/composers
+1. Abra o Postman → **New → Collection** → nomeie como `Sonata API`.
+2. **New → Environment** → adicione a variável `baseUrl` com valor
+   `http://localhost:8080` e selecione esse environment no canto superior direito.
+3. Em cada request que envia JSON, vá na aba **Headers** e adicione:
+   - `Content-Type: application/json`
+4. O corpo JSON vai na aba **Body → raw → JSON**.
 
-# Assinar plano
-curl -X POST "http://localhost:8080/api/subscriptions/user/1?plan=PREMIUM"
+### Requisições principais
 
-# Registrar reprodução
-curl -X POST "http://localhost:8080/api/history?userId=1&movementId=1&listenedSeconds=120"
+#### 1. Criar usuário
+- **Method:** `POST`
+- **URL:** `{{baseUrl}}/api/users`
+- **Headers:** `Content-Type: application/json`
+- **Body (raw / JSON):**
+```json
+{
+  "name": "Ana",
+  "email": "ana@sonata.com",
+  "password": "secret123",
+  "preferredAudioQuality": "LOSSLESS"
+}
 ```
+- **Resposta esperada:** `201 Created` com o usuário criado (anote o `id`).
+
+#### 2. Listar compositores
+- **Method:** `GET`
+- **URL:** `{{baseUrl}}/api/composers`
+- **Resposta esperada:** `200 OK` com array JSON de compositores.
+
+#### 3. Criar compositor
+- **Method:** `POST`
+- **URL:** `{{baseUrl}}/api/composers`
+- **Headers:** `Content-Type: application/json`
+- **Body:**
+```json
+{
+  "name": "Ludwig van Beethoven",
+  "period": "CLASSICAL"
+}
+```
+
+#### 4. Assinar plano (Subscription)
+- **Method:** `POST`
+- **URL:** `{{baseUrl}}/api/subscriptions/user/1`
+- **Params (aba Params):**
+  - `plan` = `PREMIUM`  *(valores válidos: `FREE`, `PREMIUM`, `LOSSLESS`)*
+- **Body:** vazio.
+- **Resposta esperada:** `200 OK` com a subscription ativa.
+
+#### 5. Cancelar assinatura
+- **Method:** `DELETE`
+- **URL:** `{{baseUrl}}/api/subscriptions/user/1`
+
+#### 6. Registrar reprodução (PlayHistory)
+- **Method:** `POST`
+- **URL:** `{{baseUrl}}/api/history`
+- **Params:**
+  - `userId` = `1`
+  - `movementId` = `1`
+  - `listenedSeconds` = `120`
+- **Body:** vazio.
+
+#### 7. Reproduções recentes
+- **Method:** `GET`
+- **URL:** `{{baseUrl}}/api/history/user/1/recent`
+- **Params:**
+  - `limit` = `10`
+
+### Fluxo de teste sugerido
+
+Execute as requisições nesta ordem para popular o banco e validar as regras
+de negócio de ponta a ponta:
+
+1. `POST /api/users` → cria o usuário (guarde o `id`).
+2. `POST /api/composers` → cria um compositor.
+3. `POST /api/works` → cria uma obra ligada ao compositor.
+4. `POST /api/movements` → cria os movimentos da obra.
+5. `POST /api/subscriptions/user/{id}?plan=PREMIUM` → ativa o plano.
+6. `POST /api/playlists` → cria a playlist do usuário.
+7. `POST /api/history?userId=...&movementId=...&listenedSeconds=...` → registra reprodução.
+8. `GET /api/history/user/{id}/recent?limit=10` → confirma o histórico.
+
+### Dica — salvar IDs entre requisições
+
+Na aba **Tests** de uma request `POST`, você pode capturar o `id` da resposta
+e guardar como variável do environment para reusar nas próximas chamadas:
+
+```javascript
+const data = pm.response.json();
+pm.environment.set("userId", data.id);
+```
+
+Depois é só usar `{{userId}}` na URL das próximas requisições
+(ex.: `{{baseUrl}}/api/subscriptions/user/{{userId}}`).
 
 ---
 
