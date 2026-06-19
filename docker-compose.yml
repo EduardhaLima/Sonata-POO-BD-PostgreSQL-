@@ -1,0 +1,59 @@
+# ============================================================================
+#  docker-compose.yml - Sonata API + PostgreSQL
+#  -------------------------------------------------------------------------
+#  Sobe dois servicos:
+#
+#  1) sonata-db  -> container do PostgreSQL 16
+#                   - imagem: postgres:16-alpine
+#                   - porta 5432 exposta no host
+#                   - volume persistente para os dados
+#                   - variaveis: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
+#
+#  2) sonata-api -> nossa API Java/Spring Boot (Dockerfile ao lado)
+#                   - depende de sonata-db (depends_on)
+#                   - conecta via jdbc:postgresql://sonata-db:5432/sonata
+#                   - porta 8080 exposta no host
+#
+#  Para subir tudo:   docker compose up --build
+#  Para derrubar:     docker compose down
+#  Para zerar dados:  docker compose down -v
+# ============================================================================
+
+version: "3.9"
+
+services:
+  sonata-db:
+    image: postgres:16-alpine
+    container_name: sonata-db
+    environment:
+      POSTGRES_USER: sonata
+      POSTGRES_PASSWORD: sonata
+      POSTGRES_DB: sonata
+    ports:
+      - "5432:5432"
+    volumes:
+      - sonata_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonata -d sonata"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  sonata-api:
+    build: .
+    container_name: sonata-api
+    depends_on:
+      sonata-db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: "prod"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://sonata-db:5432/sonata"
+      SPRING_DATASOURCE_USERNAME: "sonata"
+      SPRING_DATASOURCE_PASSWORD: "sonata"
+      SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.PostgreSQLDialect"
+      SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+    ports:
+      - "8080:8080"
+
+volumes:
+  sonata_db_data:

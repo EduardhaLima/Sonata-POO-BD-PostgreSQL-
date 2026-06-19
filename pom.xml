@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+   PROJETO SONATA - API BACKEND (Java + Spring Boot)
+  ============================================================================
+   Arquivo de configuração Maven do projeto.
+   Define dependências, versão do Java e plugins de build.
+
+   Stack:
+    - Java 17
+    - Spring Boot 3.3.x (Web, Data JPA, Validation, Security)
+    - PostgreSQL (driver org.postgresql:postgresql) - banco real provisionado
+      via Docker (ver docker-compose.yml na raiz de /backend).
+    - H2 (apenas para testes automatizados em memoria)
+    - Lombok para reduzir boilerplate (getters/setters/construtores)
+  ============================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Herda configurações padrão do Spring Boot (versões alinhadas) -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.4</version>
+        <relativePath/>
+    </parent>
+
+    <!-- Coordenadas do nosso artefato -->
+    <groupId>com.sonata</groupId>
+    <artifactId>sonata-api</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>sonata-api</name>
+    <description>API REST do Projeto Sonata - streaming de musica classica</description>
+
+    <properties>
+        <java.version>21</java.version>
+    </properties>
+
+    <dependencies>
+        <!-- Web: cria endpoints REST (controllers, @RestController, etc.) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- JPA + Hibernate: ORM para persistencia das entidades -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Bean Validation: anotacoes @NotNull, @Email, @Size etc. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Security: protege endpoints, hashing de senha (BCrypt) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- Driver JDBC do PostgreSQL.
+             O banco em si eh provisionado via Docker (ver docker-compose.yml).
+             Configuracao de conexao fica em application.properties. -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- H2 disponivel apenas para os testes unitarios (scope test). -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Lombok: gera getters/setters/builders em tempo de compilacao -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Testes -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Empacota tudo em um JAR executavel (java -jar sonata-api.jar) -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
